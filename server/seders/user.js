@@ -1,3 +1,5 @@
+// this file is for creating fake users 
+
 import {User} from '../models/user.js';
 import {faker} from '@faker-js/faker';
 

@@ -1,6 +1,6 @@
 import express from 'express';
 import { isAuthenticated } from '../middlewares/auth.js';
-import { getMychats, newGropuChat } from '../controllers/chat.js';
+import { getMyGroups, getMychats, newGropuChat } from '../controllers/chat.js';
 
 
 const app = express.Router();
@@ -13,6 +13,11 @@ app.use(isAuthenticated);
 // for every route below now we can access the user from every route
 
 app.post('/new',newGropuChat)
-app.post('/my',getMychats)
+
+app.get('/my',getMychats)
+
+app.get('/my/group',getMyGroups)
+
+app.put('/addmembers',getMyGroups)
 
 export default app;

@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { errorMiddleware } from './middlewares/error.js';
 import cookieParser from 'cookie-parser';
 import chatRoute from './routes/chat.js';
+import { createUser } from './seders/user.js';
 // import { createUser } from './seders/user.js';
 
 
@@ -15,7 +16,7 @@ const add=process.env.MONGO_URI
 
 connectDB(add);
 
-// createUser(10);
+// createUser(2); this is the main function for creating user
 
 const port=process.env.PORT || 3000;
 
