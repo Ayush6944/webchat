@@ -168,20 +168,29 @@ const leaveGroup = TryCatch(async(req, res,next) => {
     if(!chat.groupChat) return next(new ErrorHandler("No Group Chat found",404));
 
     const remainingMembers = chat.members.filter((members)=>members.toString() !== req.user.toString());
+
+    if(remainingMembers.length <= 2) 
+        return next(new ErrorHandler
+    ("You can not leave the group",403));
    
     if(chat.creator.toString() == req.user.toString()){
-        const newCreator = remainingMembers[0];
+        const newCreator = remainingMembers[0];//here if the admin will leave the group then the first member will be the new admin
+        chat.creator = newCreator;
     }
 
     chat.members= remainingMembers;
-    await chat.save();
+    // if error founded here ..
+    const [user]= await Promise.all ([User.findById(req.user,"name")
+    ,chat.save()]);
     emitEvent(
         req,    
         ALERT,
         chat.members,
-        `${userThatWillBeRemoved.name} has been removed  by admin `
+        `User ${user.name} has been removed  by admin `
     );
-    emitEvent(req,REFETCH_CHATS , chat.members);
+    emitEvent(req,
+        REFETCH_CHATS , 
+        chat.members);
 
     return res.status(200).json({
         success:true,
@@ -190,6 +199,12 @@ const leaveGroup = TryCatch(async(req, res,next) => {
 
 })
 
+const sendAttachment = TryCatch(async(req,res,next) => {
+    return res.status(200).json({
+        success:true,
+        message:"Attachment sent successfully"
+    })
+})
 
 
-export {newGropuChat,getMychats,getMyGroups,addMembers,removeMembers,leaveGroup}
+export {newGropuChat,getMychats,getMyGroups,addMembers,removeMembers,leaveGroup,sendAttachment}
