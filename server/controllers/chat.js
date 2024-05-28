@@ -87,17 +87,109 @@ const addMembers = TryCatch(async(req, res,next) => {
     const chat = await Chat.findById(chatId);
 
     if(!chat) return next(new ErrorHandler("chat not found",404));
+    if(!chat.groupChat) return next(new ErrorHandler("No Group Chat found",404));
 
+    if(chat.creator.toString() !== req.user._id.toString())
+        return next(new ErrorHandler("You are not allowed to add members",403));
 
+    const allNewMemberPromise = members.map((i)=>UserActivation.findById(i,"name"));
     
+    const allNewMember = await Promise.all(allNewMemberPromise);
     
+    const uniqueMembers = allNewMember.filter((i)=>!chat.members.includes(i._id.toString())).map((i)=>i._id);
+
+    chat.members.push(...uniqueMembers);
+
+    if(chat.members.length > 100) return next(new ErrorHandler("You can add only 100 members",403));
+    await chat.save();
+
+    const allUserName = allNewMember.map((i)=>i.name).join(",");
+    
+    emitEvent(
+        req,
+        ALERT,
+        chat.members,
+        `You have been added to ${chat.name} by ${req.user.name}`
+    )
+
+    return res.status(200).json({
+        success:true,
+        message:`${allUserName} have been added to ${chat.name}`
+    }
+    )
+
     return res.status(200).json({
         success:true,
         groups
     })
 })
+const removeMembers = TryCatch(async(req, res,next) => {
+    
+    const {chatId,userId} = req.body;
+    
+    const [chat , userThatWillBeRemoved] = await Promise.all([
+        Chat.findById(chatId),
+        User.findById(userId,"name"),
+    ]);
+    if(!chat) return next(new ErrorHandler("chat not found",404));
+    if(!chat.groupChat) return next(new ErrorHandler("No Group Chat found",404));
+    
+    if(chat.creator.toString() !== req.user._id.toString())
+        return next(new ErrorHandler("You are not allowed to add members",403));
+
+    if(chat.members.length <= 3) return next(new ErrorHandler("You can not remove more members",403));
+
+    chat.members = chat.members.filter((members)=>members.toString() !== userId.toString());
+
+    await chat.save();
+
+    emitEvent(
+        req,    
+        ALERT,
+        chat.members,
+        `${userThatWillBeRemoved.name} has been removed  by admin `
+    );
+    emitEvent(req,REFETCH_CHATS , chat.members);
+
+    return res.status(200).json({
+        success:true,
+        message:`${userThatWillBeRemoved.name} has been removed  by admin `
+    })
+
+})
+const leaveGroup = TryCatch(async(req, res,next) => {
+    
+    const chatId = req.params.id;
+    
+    const chat = await Chat.findById(chatId);
+
+    if(!chat) return next(new ErrorHandler("chat not found",404));
+   
+    if(!chat.groupChat) return next(new ErrorHandler("No Group Chat found",404));
+
+    const remainingMembers = chat.members.filter((members)=>members.toString() !== req.user.toString());
+   
+    if(chat.creator.toString() == req.user.toString()){
+        const newCreator = remainingMembers[0];
+    }
+
+    chat.members= remainingMembers;
+    await chat.save();
+    emitEvent(
+        req,    
+        ALERT,
+        chat.members,
+        `${userThatWillBeRemoved.name} has been removed  by admin `
+    );
+    emitEvent(req,REFETCH_CHATS , chat.members);
+
+    return res.status(200).json({
+        success:true,
+        message:`${userThatWillBeRemoved.name} has been removed  by admin `
+    })
+
+})
 
 
 
-
-export {newGropuChat,getMychats,getMyGroups}
+export {newGropuChat,getMychats,getMyGroups,addMembers,removeMembers,leaveGroup}
