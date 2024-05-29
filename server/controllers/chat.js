@@ -2,9 +2,10 @@ import { TryCatch } from "../middlewares/error.js";
 import { ErrorHandler } from "../utils/utility.js";
 import {Chat} from "../models/chat.js";
 import { emitEvent } from "../utils/features.js";
-import { ALERT, REFETCH_CHATS } from "../constants/event.js";
+import { ALERT, NEW_MESSAGE_ALERT, REFETCH_CHATS } from "../constants/event.js";
 import { getOtherMember } from "../lib/helper.js";
-
+import {User} from "../models/user.js";
+import {Message} from "../models/message.js";
 const newGropuChat = TryCatch(async(req, res,next) => {
 
 const {name,members} = req.body;
@@ -71,7 +72,7 @@ const getMyGroups = TryCatch(async(req, res,next) => {
         creator:req.user
     }).populate("members","name avatar");
 
-    const groups = chats.map((_id,name,members,name)=>({
+    const groups = chats.map((_id,name,members)=>({
         _id,groupChat,name,
         avatar:members.slice(0,3).map((avatar) => avatar.url),
     }));
@@ -200,11 +201,123 @@ const leaveGroup = TryCatch(async(req, res,next) => {
 })
 
 const sendAttachment = TryCatch(async(req,res,next) => {
+
+    const {chatId} = req.body;
+    const [chat, me ] = await Promise .all([Chat.findById(chatId),
+        User.findById(req.user,"name")
+    ])
+    
+    if(!chat) return next(new ErrorHandler("chat not found",404));          
+    
+    const files = req.files || [];
+
+    if(files.length < 0) 
+        return next(new ErrorHandler("No files uploaded , Please upload a file",400));
+
+    // uploads files here
+
+    const attachments = [];
+    
+    const messageForDB = {
+        content :"",
+        attachments:[],
+        sender:me._id,
+        chat:chatId,
+    }
+    const messageForRealTime = {
+       ...messageForDB,
+        sender:{
+            _id:me._id,
+            name:me.name,
+        },
+       
+    };
+    const message = await Message.create(messageForDB);
+
+    emitEvent(req,
+        NEW_MESSAGE_ALERT,
+        chat.members,
+        {messageForRealTime,
+            chatId,
+        });
+        emitEvent(req,
+         NEW_MESSAGE_ALERT,chat.members ,{chatId}
+        );
+
     return res.status(200).json({
         success:true,
-        message:"Attachment sent successfully"
-    })
+        message, })
 })
 
+const getChatDetails = TryCatch(async(req,res,next) => {
+    if(req.query.populate==='true'){
+        const chat = await Chat.findById(req.params.id)
+        .populate("members","name avatar")
+        .lean();
+        if(!chat) return next(new ErrorHandler("chat not found",404));
+        chat.members = chat.members.map((_id,name,avatar)=>      
+            ({
+                _id,
+                name,
+                avatar:avatar.url,
+            }));
 
-export {newGropuChat,getMychats,getMyGroups,addMembers,removeMembers,leaveGroup,sendAttachment}
+        return res.status(200).json({
+            success:true,
+            chat
+        })
+    }else{
+        const chat = await Chat.findById(req.params.id);
+        if(!chat) 
+        return next(new ErrorHandler("chat not found",404));
+
+        return res.status(200).json({
+            success:true,
+            chat
+        })
+
+    }
+})
+
+const renameGroup = TryCatch(async(req,res,next) => {
+    const chatId = req.params.id;
+    const {name} = req.body;
+
+    const chat = await Chat.findById(chatId);
+    if(!chat) return next(new ErrorHandler("chat not found",404));
+    if(!chat.groupChat) 
+        return next(new ErrorHandler("This is not a group chat",400));
+
+    if (chat.creator.toString() !== req.user.toString())
+        return next(new ErrorHandler("You are not allowed to do this",403));
+
+    chat.name = name;
+
+    await chat.save(); 
+
+    emitEvent(req,
+        REFETCH_CHATS,
+        chat.members,
+        );
+
+    return res.status(200).json({
+        success:true,
+        message:`group name changed succesfull to ${name}`
+    })
+
+
+
+})
+
+const deleteChat = TryCatch(async(req,res,next) => {
+    
+})
+
+export {newGropuChat,
+    getMychats,getMyGroups,addMembers,removeMembers,
+    leaveGroup,sendAttachment,
+    getChatDetails
+    ,renameGroup
+    ,deleteChat
+
+}

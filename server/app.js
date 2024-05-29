@@ -32,7 +32,7 @@ app.use('/user',userRoutes)
 app.use('/chat',chatRoute)
 
 app.get('/',(req,res)=>{
-    res.send("hello world")
+    res.send("hello world") 
 })
 
 app.use(errorMiddleware)

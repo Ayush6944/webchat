@@ -3,10 +3,8 @@ import mongoose, { Schema,Types,model} from "mongoose";
 const schema = new Schema({
 
     content:String,
-
-    // sender:{
-            attachmets:{
-        
+    attachments:[
+        {
         public_id:{
             type:String,
             required:true
@@ -15,8 +13,8 @@ const schema = new Schema({
             type:String,
             required:true
         
-        },
-            },
+        },},
+            ],
 
             sender:{
             type:Types.ObjectId,

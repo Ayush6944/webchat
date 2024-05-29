@@ -12,8 +12,8 @@ const newUser = async(req,res)=>{
 
     const {name,username,password,bio}=req.body;
     const avatar={
-        public_id:"12789",
-        url:"https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+        public_id:"12787859",
+        url:"https://cdn.pixabay.com/photo/2015/10/05/22/blank-profile-picture-973460_1280.png"
     }
 
         const user = await User.create({
@@ -33,7 +33,7 @@ const login = TryCatch(async(req,res,next)=>{
     const {username,password}=req.body;
 
     const user =await User.findOne({username}).select("+password");
-    if(!user) return next(new ErrorHandler("Invalid Username or Password",404));
+    if(!user) return next(new ErrorHandler("Invalid UserName",404));
         
     const isMatch=await compare(password,user.password);
 
