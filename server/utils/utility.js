@@ -4,9 +4,9 @@ class ErrorHandler extends Error {
         this.statusCode = statusCode;
 
         // Only because we are extending a built in class
-        Object.setPrototypeOf(this, ErrorHandler.prototype);
+        // Object.setPrototypeOf(this, ErrorHandler.prototype);
     }
 
 }
 
-export {ErrorHandler}
+export {ErrorHandler};

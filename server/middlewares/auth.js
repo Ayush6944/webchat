@@ -17,5 +17,23 @@ const isAuthenticated = (req, res, next) => {
 
    next()
 }
+const isAdminOnly = (req, res, next) => {
+    
+   const tokens =  req.cookies['app-admin-token'];
 
-export { isAuthenticated };
+   if(!tokens) return next(new ErrorHandler('Only Admin can access ! ',401));
+    
+   //verify token
+   const secretKey = jwt.verify(tokens, process.env.JWT_SECRET);
+
+   const adminSecretkey =  process.env.ADMIN_SECRET_KEY ; //isko app.js me dal kar export kar sakte hai for security reasons
+     
+   const isMatched = secretKey === adminSecretkey;
+
+   if(!isMatched) 
+      return next(new ErrorHandler('Only Admin can access ! ',401));
+
+   next()
+}
+
+export { isAuthenticated ,isAdminOnly};

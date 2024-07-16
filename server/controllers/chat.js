@@ -1,11 +1,13 @@
 import { TryCatch } from "../middlewares/error.js";
 import { ErrorHandler } from "../utils/utility.js";
 import {Chat} from "../models/chat.js";
-import { emitEvent } from "../utils/features.js";
+import { deleteFilesFromCloudinary, emitEvent } from "../utils/features.js";
 import { ALERT, NEW_MESSAGE_ALERT, REFETCH_CHATS } from "../constants/event.js";
 import { getOtherMember } from "../lib/helper.js";
 import {User} from "../models/user.js";
 import {Message} from "../models/message.js";
+
+
 const newGropuChat = TryCatch(async(req, res,next) => {
 
 const {name,members} = req.body;
@@ -57,12 +59,12 @@ const transformedChats = chats.map((_id,name,members,groupChat) => {
         },[]),
     };
 
-});
+
 return res.status(200).json({
     success:true,
     chats:transformedChats
 });
-});
+});});
     
 const getMyGroups = TryCatch(async(req, res,next) => {
     
@@ -203,14 +205,20 @@ const leaveGroup = TryCatch(async(req, res,next) => {
 const sendAttachment = TryCatch(async(req,res,next) => {
 
     const {chatId} = req.body;
+    const files = req.files || [];
+
+    if(files.length < 1) return next(new ErrorHandler("No files uploaded , Please upload a file",400));
+
+    if(files.lenght > 5 ) return next(new ErrorHandler("You can not upload more than 5 files",400));
+    // const files = req.files || [];
+
     const [chat, me ] = await Promise .all([Chat.findById(chatId),
         User.findById(req.user,"name")
     ])
     
+
     if(!chat) return next(new ErrorHandler("chat not found",404));          
     
-    const files = req.files || [];
-
     if(files.length < 0) 
         return next(new ErrorHandler("No files uploaded , Please upload a file",400));
 
@@ -310,14 +318,84 @@ const renameGroup = TryCatch(async(req,res,next) => {
 })
 
 const deleteChat = TryCatch(async(req,res,next) => {
-    
+    const chatId = req.params.id;
+    const chat = await Chat.findById(chatId);
+
+    if(!chat) return next(new ErrorHandler("chat not found",404));
+    const members = chat.members;
+
+    if(chat.groupChat && chat.creator.toString() !== req.user.toString())
+        return next(new ErrorHandler("You are not allowed to do this"
+    ,403));
+
+    if(!chat.groupChat && !chat.members.includes(req.user.toString()))
+        return next(new ErrorHandler("You are not allowed to do this"
+    ,403));
+
+// here we have to delete all messages in this chat and attachments from cloudinary
+ 
+            const  messageWithAttachments = await Message.find({chat:chatId
+                ,attachments:{$exists:true,$ne:[]}
+            });
+            const public_ids =[];
+
+            messageWithAttachments.forEach(({attachments})=>{
+                attachments.forEach(({public_id})=>{
+                    public_ids.push(public_id)
+                })  
+            })
+            await Promise.all([
+                deleteFilesFromCloudinary(public_ids),
+                chat.deleteOne(),
+                Message.deleteMany({chat:chatId})
+            ])
+            emitEvent(req, REFETCH_CHATS,members);
+
+            return res.status(200).json({
+                success:true,
+                message:"chat deleted successfully"
+            });
+
+})           
+// 3.41.31
+
+const getMessages = TryCatch(async(req,res,next) => {
+
+    const chatId = req.params.id;
+    // const skip = (page - 1 )* limit
+    const {page = 1,limit = 20} = req.query;
+
+    const [messages , totalMessagesCount] = await Promise.all([
+    Message.find({chat:chatId})
+    .sort({createdAt:-1})
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .populate("sender","name")
+    .lean(),
+    Message.countDocuments({chat:chatId}),
+    ]);
+
+    const totalPages = Math.ceil(totalMessagesCount / limit) || 0 ;
+
+    return res.status(200).json({
+        success:true,
+        messages: messages.reverse(),
+        totalPages,
+    })
+
+
 })
 
 export {newGropuChat,
-    getMychats,getMyGroups,addMembers,removeMembers,
-    leaveGroup,sendAttachment,
+    getMychats,
+    getMyGroups,
+    addMembers,
+    removeMembers,
+    leaveGroup,
+    sendAttachment,
     getChatDetails
     ,renameGroup
     ,deleteChat
+    ,getMessages
 
 }

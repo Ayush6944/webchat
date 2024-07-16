@@ -12,7 +12,7 @@ const  cookieOptions = {
 const connectDB = (uri)=>{
  mongoose
  .connect(uri,{ dbName:"ChatApp" })
- .then((data)=>console.log(`Connected to DB: ${data.connection.host}`))
+ .then((data)=>console.log(`Connected to DB:  ${data.connection.host}-ChatApp`))
  .catch((err)=>
     {
         throw err;})
@@ -37,4 +37,8 @@ const emitEvent = (req,event,users,data)=>{
     console.log('Emitting event')
 }
 
-export {connectDB,SendTokens,cookieOptions,emitEvent} ;
+const deleteFilesFromCloudinary = async (public_ids)=>{
+
+}
+
+export {connectDB,SendTokens,cookieOptions,emitEvent,deleteFilesFromCloudinary} ;
