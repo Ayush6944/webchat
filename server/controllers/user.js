@@ -1,7 +1,7 @@
 // import { emit } from "nodemon";
 import { compare, compareSync } from "bcrypt";
 import {User} from "../models/user.js";
-import {SendTokens, cookieOptions, emitEvent} from "../utils/features.js";
+import {SendTokens, cookieOptions, emitEvent, uploadtoCloudinary} from "../utils/features.js";
 import { TryCatch } from "../middlewares/error.js";
 import { ErrorHandler } from "../utils/utility.js";
 import {Request} from '../models/request.js';
@@ -13,20 +13,24 @@ import {getOtherMember} from "../lib/helper.js"
 // create a new user and save it to database and give a response in form of cookie or anytype of message
 
 // login details are stored in database via cookie in web browser
-const newUser = TryCatch(async(req,res)=>{
+const newUser = TryCatch(async(req,res,next)=>{
+    const {name,username,password,bio,email}=req.body;
+    const file = req.file;
+    console.log("file");
 
-    const {name,username,password,bio}=req.body;
-    const file = req.file
-    console.log(file);
+    if(!file) return next(new ErrorHandler("Please Upload Avatar file ",400));
 
-    if(!file) return next(new ErrorHandler("Please UPload Avatar file ",400));
+
+    const result = await uploadtoCloudinary([file]);
+    // console.log("yaha tak Ok",result);
 
     const avatar ={
-        public_id:"asas",
-        url:"asas"
+        public_id:result[0].public_id,
+        url:result[0].url,
     };
         const user = await User.create({
             name,
+            email,
             bio,
             password,
             username,
@@ -34,6 +38,7 @@ const newUser = TryCatch(async(req,res)=>{
     });
     
     SendTokens(res,user,201,'user created successfully');
+
 
 });
 
@@ -71,7 +76,7 @@ const logout = TryCatch(async(req,res)=>{
     {...cookieOptions,maxAge:0}
 ).json({
         success:true,
-       message:"Logged Out Succesfully"
+       message:"Logged Out Succesfully."
     });
 }
 )

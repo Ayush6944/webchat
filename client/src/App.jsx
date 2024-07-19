@@ -1,15 +1,14 @@
-import React,{Suspense, lazy} from 'react';
+import React,{Suspense, lazy,useEffect} from 'react';
 import {BrowserRouter, Routes,Route} from 'react-router-dom'
 import ProtectRoute from './component/auth/ProtectRoute';
-import Loaders from './component/layout/Loaders';
-// import ChatManagement from './pages/admin/ChatManagement';
-// import UserManagement from './pages/admin/UserManagement';
-// import GroupManagemnt from './pages/admin/GroupManagemnt';
-// import MessageMAnagement from './pages/admin/MessageMAnagement';
-// import Dashboard from './pages/admin/Dashboard';
-// import { Dashboard } from '@mui/icons-material';
-
-
+import Loaders from './component/layout/Loaders'; 
+import axios from 'axios';
+import { server } from './constant/congif';
+import { useDispatch, useSelector } from 'react-redux';
+import { usernotExists,userExists } from './redux/reducers/auth';
+import {Toaster} from 'react-hot-toast';
+// import cors from 'cors'
+// import cors from 'cors/lib/supports-preflight'
 
 const Home=lazy(()=>import('./pages/Home'));
 
@@ -26,11 +25,27 @@ const UserManagement = lazy(()=>import('./pages/admin/UserManagement'));
 // const GroupManagemnt = lazy(()=>import('./pages/admin/GroupManagemnt'));
 const MessageMAnagement = lazy(()=>import('./pages/admin/MessageMAnagement'));
 
-
-let user = true;
+// let user = true;
 
 const App = () => {
-  return (
+  // console.log(server); 
+
+  const {user,loader} = useSelector((state)=>state.auth)
+
+  const dispatch = useDispatch();
+// 21.47 (3)
+  useEffect(()=>{  
+      axios
+      .get(`${server}/api/v1/user/me`,{ withCredentials: true})
+      .then(({data})=> dispatch(userExists(data.user)))
+      .catch((err)=>usernotExists())
+    ;
+  },[dispatch]);
+
+
+  return loader?(
+    <LayuotLoader/>
+  ) :(
     <BrowserRouter>
     <Suspense fallback={<Loaders/>}>
     <Routes>
@@ -63,7 +78,7 @@ const App = () => {
 
 
     </Suspense>
-   
+   <Toaster position="bottom-center"/>
     </BrowserRouter>
     
   );

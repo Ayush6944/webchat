@@ -8,6 +8,7 @@ import { acceptrequestValidator, loginValidator, registerValidator, sendrequestV
 const app = express.Router();
 
 app.post('/new',multerUpload.single('avatar'),registerValidator(),validateHandle,newUser); 
+
 app.post('/login',loginValidator(),validateHandle,login);
 
 // now after login user can access the further routes
@@ -15,7 +16,7 @@ app.post('/login',loginValidator(),validateHandle,login);
 app.use(isAuthenticated);
 // here above function is used to authenticate the user 
 // for every route below now we can access the user from every route
-app.get('/myprofile',getMyProfile)
+app.get('/me',getMyProfile)
 
 app.get('/logout',logout)
 

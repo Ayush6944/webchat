@@ -2,6 +2,13 @@ import React, { Suspense, useState } from 'react';
 import { AppBar,Box,Toolbar,Tooltip,Typography,IconButton} from '@mui/material';
 import { Add, Group, LoginOutlined, LoginRounded, Logout, Menu, NotificationAdd, Notifications, Search } from '@mui/icons-material';
 import {useNavigate} from 'react-router-dom';
+import { server } from '../../constant/congif';
+import toast from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
+import { usernotExists } from '../../redux/reducers/auth';
+import axios from 'axios';
+import { setIsMobile } from '../../redux/reducers/misc';
+
 // import Login from '../../pages/Login';
 // import SearchDialog from '..fi/search';
 // import SearchDailog from '../specific/Search';
@@ -10,19 +17,17 @@ const Notification= React.lazy(()=>import('../specific/Notification'));
 const NewGroupDialog = React.lazy(()=>import('../specific/NewGroup'));
 const Header = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
 
-    const [isMobile, setIsMobile]=useState(false);
+    // const [isMobile, setIsMobile]=useState(false);
     const [isSearch, setIsSearch]=useState(false);
     const [isNewgroup, setIsNewgroup]=useState(false);
     const [isNotification, setIsNotification]=useState(false);
 
 
 
-    const HandleMobile = () => {
-        console.log('mobile');
-        setIsMobile((prev)=>!prev);
-    }
+    const handleMobile = () => dispatch(setIsMobile(true));
     const openSearch = () => {
         // console.log('search');
         setIsSearch((prev)=>!prev);
@@ -33,10 +38,25 @@ const Header = () => {
     }
     const navigategroup = () => navigate('/group');
 
-    const Handlelogout = () => {
-        // localStorage.removeItem('token');
-        console.log('logout');
+
+
+    const Handlelogout = async() => {
+        try {
+        const {data} = await axios.get(`${server}/api/v1/user/logout`,
+            {withCredentials:true}); 
+
+            toast.success(data.message);
+            dispatch(usernotExists());
+
+
+        } catch (error) {
+            console.log(error);
+            toast.error(error?.response?.data?.message || "something went wrong");
+        }
     }
+
+
+
     const Handlenotificatio = () => {
         setIsNotification((prev)=>!prev)
     }
@@ -60,7 +80,7 @@ const Header = () => {
                         display: { xs: 'block', sm: 'none' },
                     }}>
                         {/* mobile screen */}
-                        <IconButton color='inherit' onClick={HandleMobile}>
+                        <IconButton color='inherit' onClick={handleMobile}>
                         <Menu/>
                         </IconButton>
 

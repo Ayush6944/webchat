@@ -6,13 +6,16 @@ import cookieParser from 'cookie-parser';
 // import { createUser } from './seders/user.js';
 import { Server } from 'socket.io';
 import {createServer }from 'http';
-import {v4 as uuid, v4} from 'uuid';
+import {v4 as uuid} from 'uuid';
 import adminRoutes from './routes/admin.js';
 import chatRoute from './routes/chat.js';
 import userRoutes from './routes/user.js';
 import { NEW_MESSAGE, NEW_MESSAGE_ALERT } from './constants/event.js';
 import { getSockets } from './lib/helper.js';
 import { Message } from './models/message.js';
+import {v2} from 'cloudinary';
+import cors from 'cors';
+// import clo
 dotenv.config({ 
     path:'./.env'} 
 )
@@ -22,6 +25,14 @@ const add=process.env.MONGO_URI
 connectDB(add);
 // console.log(process.env.NODE_ENV);
 // createUser(2); this is the main function for creating user
+
+// cloudinary config 35.45
+
+v2.config({
+    cloud_name:process.env.CLOUD_NAME,
+    api_key:process.env.API_KEY,
+    api_secret:process.env.API_SECRET
+})
 
 const port=process.env.PORT || 3000;
 const envMode = process.env.NODE_ENV.trim()|| "development";
@@ -37,14 +48,17 @@ const userSocketIds = new Map();
 // using middleware
 app.use(express.json())
 app.use(cookieParser())
-// connectDB('mongodb://localhost:27017/')
+app.use(cors({
+    origin:['http://localhost:5173', 'http://localhost:4173'],
+    credentials:true
+}));
 
 
-app.use('/user',userRoutes) 
-app.use('/chat',chatRoute)
+app.use('/api/v1/user',userRoutes) 
+app.use('/api/v1/chat',chatRoute)
 
 // admin routes
-app.use('/admin',adminRoutes)
+app.use('/api/v1/admin',adminRoutes)
 
 app.get('/',(req,res)=>{
     res.send("LOADING SERVER ......") 

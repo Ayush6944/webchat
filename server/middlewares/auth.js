@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 import { ErrorHandler } from "../utils/utility.js";
+import { TryCatch } from "./error.js";
 
 
-const isAuthenticated = (req, res, next) => {
+const isAuthenticated =  TryCatch((req, res, next) => {
     
    const tokens =  req.cookies['chattu-token'];
 
@@ -12,11 +13,8 @@ const isAuthenticated = (req, res, next) => {
    const decodeData = jwt.verify(tokens, process.env.JWT_SECRET);
      
    req.user = decodeData._id;
-
-//    console.log(req.user)
-
    next()
-}
+});
 const isAdminOnly = (req, res, next) => {
     
    const tokens =  req.cookies['app-admin-token'];
@@ -37,3 +35,4 @@ const isAdminOnly = (req, res, next) => {
 }
 
 export { isAuthenticated ,isAdminOnly};
+  

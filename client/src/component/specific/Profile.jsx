@@ -15,7 +15,7 @@ function Profile() {
         }}
         />
 
-        <ProfileCard  heading={"Bio"} text={'hello myself Ayush Srivastava here '} />
+        <ProfileCard  heading={"Bio"} text={'hello myself Ayush Srivastava here'} />
         <ProfileCard  heading={"Username"} text={'@AyushJI '} Icon={<AlternateEmail/>} />
         <ProfileCard  heading={"Name"} text={'hello myself Ayush Srivastava here '} Icon={<Face/>} />
         <ProfileCard  heading={"Joined On "} text={moment('2024-04-13T00:00:00.000Z').fromNow()} Icon={<CalendarMonth/>} />

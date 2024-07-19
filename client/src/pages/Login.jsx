@@ -1,10 +1,15 @@
-import React,{useState} from 'react'
-import {Avatar, Button, Container,IconButton,Paper, Stack, TextField, Typography} from "@mui/material"
-import {CameraAlt as CameraAltIcon} from "@mui/icons-material"
-import { VisualHiddenInput } from '../component/styles/StyleComponents';
-import {useInputValidation , useStrongPassword} from '6pp'
-import { usernameValidator } from '../utils/validator';
+import { useFileHandler, useInputValidation, useStrongPassword } from '6pp';
+import { CameraAlt as CameraAltIcon } from "@mui/icons-material";
+import { Avatar, Button, Container, IconButton, Paper, Stack, TextField, Typography } from "@mui/material";
+import axios from 'axios';
+import React, { useState } from 'react';
+import toast from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
 import { gradient2 } from '../color';
+import { VisualHiddenInput } from '../component/styles/StyleComponents';
+import { server } from '../constant/congif';
+import { userExists } from '../redux/reducers/auth';
+import { usernameValidator } from '../utils/validator';
 export default function Login() {
 
 const [isLogin,setIsLogin]=useState(true)
@@ -15,46 +20,102 @@ const name= useInputValidation('');
 const username= useInputValidation('',usernameValidator);
 const email= useInputValidation('');
 const password= useStrongPassword();
-const handlelogin=  (e)=>{
+
+const bio = useInputValidation("");
+
+const avatar = useFileHandler("single");
+
+const dispatch = useDispatch();
+
+
+
+const handlelogin = async(e)=>{
   e.preventDefault();
+
+  const config = {
+  withCredentials:true,
+  headers:{
+    "Content-Type":"application/json",
+  }
+  };
+
+  try {
+    const {data} = await axios.post(
+      `${server}/api/v1/user/login`,
+      {
+      username:username.value,
+      password:password.value, 
+    },
+  config
+  );
+  dispatch(userExists(true))
+  toast.success(data.message);
+
+  } catch (error) {
+    console.log(error);
+    toast.error(error?.response?.data?.message || "something went wrong");
+  }
 }
-const handleSignup=  (e)=>{
+
+const handleSignup= async(e)=>{
   e.preventDefault();
+
+  const formData = new FormData();
+  formData.append("avatar",avatar.file);
+  formData.append("name",name.value);
+  formData.append("email",email.value);
+  formData.append("username",username.value);
+  formData.append("password",password.value);
+  formData.append("bio",bio.value);
+
+  const config={
+    withCredentials:true
+,
+headers:{
+"Content-Type":"multipart/form-data",
+},  };
+
+try {
+  const { data } = await axios.post(
+    `${server}/api/v1/user/new`,
+    formData,
+    config
+  );
+      dispatch(userExists(data.user))
+      toast.success(data.message);
+      
+    } catch (error) {
+    toast.success(error?.response?.data?.message || "something went wrong");
+    console.log(error);
+  }
+
 }
 
   return (
-    
-    // <h1>hello</h1>
-    <div style={
-      {
-        // backgroundColor: '#4158D0',
-backgroundImage: gradient2,
-
-      }
-    }>
-    <Container component ={"main"}
-     maxWidth="xs"
-    sx={{
-      // top:'10%',
-      // padding:'5rem',
-      height:'100vh',
-      // marginTop:'2%',
-      display:'flex',
-      justifyContent:'center',
-      alignItems:'center',
-      // backgroundColor:'#f5f5f5'
+    <div
+    style={{
+      backgroundImage: gradient2,
+    }}
+  >
+    <Container
+      component={"main"}
+      maxWidth="xs"
+      sx={{
+        height: "110vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
-
       <Paper
-       elevation={4}
-       sx={{
-        padding:5,
-        display:"flex",
-        flexDirection:"column",
-        alignItems:"center"
-       }}
-       >
+        elevation={3}
+        sx={{
+          padding: 3,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         {isLogin? (
         <>
         <Typography variant='h5'>Login</Typography>
@@ -86,19 +147,14 @@ backgroundImage: gradient2,
           value={password.value}
           onChange={password.changeHandler}
           />
-          <TextField
-          required
-          fullWidth
-          label="E-Mail"
-          name="E-mail"
-          type='Email'
-          margin='normal'
-          variant='outlined'
-          value={email.value}
-          onChange={email.changeHandler}
-          />
 
-          <Button variant='contained'  type='submit' color='primary' fullWidth>Login</Button>
+          <Button 
+          sx={{
+                    marginTop: "1rem",
+                }}
+          variant='contained'  type='submit' color='primary' fullWidth
+          // disabled={isLoading}
+          >Login</Button>
 
           <Typography fullWidth padding={1}>Did not have account,creat a free accout.</Typography>
           <Button variant='text' 
@@ -119,13 +175,14 @@ backgroundImage: gradient2,
         <form style={{
           width:'100%',
           marginTop:'1rem',
-          height:'70%'
+          // height:'70%'
 
         }} 
         onSubmit={handleSignup}
         >
           <Stack position={'relative'}
-          width={'10rem'} margin={'auto'}
+          width={'10rem'}
+          margin={'auto'}
           height={'10rem'}
           >
             <Avatar  
@@ -135,34 +192,49 @@ backgroundImage: gradient2,
               objectFit:'contain',
 
             }}
+            src={avatar.preview}
             />
-          <IconButton
-          sx={{
-            position:'absolute',
-            bottom:'0',
-            right:'0',
-            color:'#fff',
-            backgroundColor:'#000',
-            ":hover":{
-              backgroundColor:'#000',
-            }
-          }}
-          component='label'
-          >
+         <IconButton
+                    sx={{
+                      position: "absolute",
+                      bottom: "0",
+                      right: "0",
+                      color: "white",
+                      bgcolor: "rgba(0,0,0,0.5)",
+                      ":hover": {
+                        bgcolor: "rgba(0,0,0,0.7)",
+                      },
+                    }}
+                    component="label"
+                  >
             <>
             <CameraAltIcon/>
-            <VisualHiddenInput type='file' />
+            <VisualHiddenInput 
+             type="file"
+             onChange={avatar.changeHandler} 
+             />
             </>
           </IconButton>
 
 
           </Stack>
+          {avatar.error && (
+                  <Typography
+                    m={"1rem auto"}
+                    width={"fit-content"}
+                    display={"block"}
+                    color="error"
+                    variant="caption"
+                  >
+                    {avatar.error}
+                  </Typography>
+                )}
 
 
 
           <TextField
           required
-          fullWidth
+            fullWidth
           label="Fullname"
           name="Fullname"
           margin='normal'
@@ -201,6 +273,15 @@ backgroundImage: gradient2,
           onChange={email.changeHandler}
           />
           <TextField
+                  required
+                  fullWidth
+                  label="Bio"
+                  margin="normal"
+                  variant="outlined"
+                  value={bio.value}
+                  onChange={bio.changeHandler}
+                />
+          <TextField
           required
           fullWidth
           label="Username"
@@ -211,6 +292,12 @@ backgroundImage: gradient2,
           value={username.value}
           onChange={username.changeHandler}
           />
+          {username.error && (
+            <Typography  color='error' variant='caption'>
+              {username.error}
+            </Typography>
+          )}
+          
           {username.error && (
             <Typography  color='error' variant='caption'>
               {username.error}
@@ -232,9 +319,17 @@ backgroundImage: gradient2,
         variant='text'
         fullWidth 
         // onclick={toggleLogin} 
-        color='success'  
-        sx={{marginTop:'0.5rem'}} 
-        onClick={toggleLogin}>Login</Button>
+        color='success' 
+        sx={{
+          marginTop:'0.5rem',
+          ":hover":{
+              backgroundColor:'lightgreen',
+          }
+          }
+      } 
+        onClick={toggleLogin}
+      
+        >Login</Button>
         
         </form>
         
