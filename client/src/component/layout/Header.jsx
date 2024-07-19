@@ -4,10 +4,10 @@ import { Add, Group, LoginOutlined, LoginRounded, Logout, Menu, NotificationAdd,
 import {useNavigate} from 'react-router-dom';
 import { server } from '../../constant/congif';
 import toast from 'react-hot-toast';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { usernotExists } from '../../redux/reducers/auth';
 import axios from 'axios';
-import { setIsMobile } from '../../redux/reducers/misc';
+import { setIsMobile, setIsSearch } from '../../redux/reducers/misc';
 
 // import Login from '../../pages/Login';
 // import SearchDialog from '..fi/search';
@@ -21,7 +21,8 @@ const Header = () => {
 
 
     // const [isMobile, setIsMobile]=useState(false);
-    const [isSearch, setIsSearch]=useState(false);
+    const {isSearch} = useSelector((state)=>state.misc);
+    // const [isSearch, setIsSearch]=useState(false);
     const [isNewgroup, setIsNewgroup]=useState(false);
     const [isNotification, setIsNotification]=useState(false);
 
@@ -29,6 +30,7 @@ const Header = () => {
 
     const handleMobile = () => dispatch(setIsMobile(true));
     const openSearch = () => {
+        dispatch(setIsSearch(true));
         // console.log('search');
         setIsSearch((prev)=>!prev);
     }

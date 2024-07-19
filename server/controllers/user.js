@@ -108,41 +108,68 @@ const searchUser = TryCatch(async(req,res)=>{
      });
  }
  )
+  
 // isme khu ch to joll hai
-const sendfreindrequest = TryCatch(async(req,res)=>{
-    const {userId} = req.body;
+// const sendfreindrequest = TryCatch(async(req,res,next)=>{
+//     const {userId} = req.body;
 
+//     const request = await Request.findOne({
+//         $or: [
+//           { sender: req.user, receiver: userId },
+//           { sender: userId, receiver: req.user },
+//         ],
+//       });
+  
+//     if (request) return next(new ErrorHandler("Request already sent", 400));
+
+//     await Request.create({
+//         sender:req.user,
+//         receiver:userId,
+//     });
+
+//     emitEvent(req,NEW_REQUEST,[userId]);
+
+//     return res.status(200).json({
+//         success:true,
+//         message:"Freind Request Sent Successfully"
+//     });
+
+
+//    });
+
+const sendfreindrequest = TryCatch(async (req, res, next) => {
+    const { userId } = req.body;
+  
     const request = await Request.findOne({
-        $or:[
-            { 
-                sender:req.user,
-                reciver:userId
-            },
-            {
-                sender:userId,
-                reciver:req.user
-            }
-        ],
-
+      $or: [
+        { sender: req.user, receiver: userId },
+        { sender: userId, receiver: req.user },
+      ],
     });
-    if(request) {
-        console.log('error in request');
-        return next(new ErrorHandler("Request Already Sent",400));
-}
+  
+    if (request)
+        return res.status(200).json({
+            success: false,
+            message: "Friend Request already sent",
+          });{ 
+    //     // toast.error("Request already sent", 400);
+    //     return next(new ErrorHandler("Request already sent", 400));
+  }
     await Request.create({
-        sender:req.user,
-        reciver:userId
+      sender: req.user,
+      receiver: userId,
     });
-
-    emitEvent(req,NEW_REQUEST,[userId]);
-
+  
+    emitEvent(req, NEW_REQUEST, [userId]);
+  
     return res.status(200).json({
-        success:true,
-        message:"Freind Request Sent Successfully"
+      success: true,
+      message: "Friend Request Sent",
     });
+  });
 
 
-   });
+
 const acceptRequest = TryCatch(async(req,res,next)=>{
     const {requestId,accept} = req.body;
 

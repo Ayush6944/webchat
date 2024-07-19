@@ -1,11 +1,11 @@
-import { Drawer, Grid, Skeleton } from '@mui/material'
+import { Drawer, Grid } from '@mui/material'
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
 import { gradient1 } from '../../color'
+import { useErrors } from '../../hooks/hook'
 import { useMyChatsQuery } from '../../redux/api/api'
 import { setIsMobile } from '../../redux/reducers/misc'
-import { samplechats } from '../../sampleDATA/sample'
 import Title from '../shared/Title'
 import ChatList from '../specific/ChatList'
 import Profile from '../specific/Profile'
@@ -20,6 +20,11 @@ const AppLayout = () => (WrappedComponent) => {
     // const {} = useSelector((state)=>state.misc);
     const { isLoading, data, isError, refetch, error } = useMyChatsQuery();
     // console.log(isLoading,"isLoading");
+
+    useErrors([{isError,error}]);
+    // console.
+
+
     const handleDeleteChat = (e, _id,groupChat) => {
       e.preventDefault();
       console.log("delete chat",_id,groupChat)
