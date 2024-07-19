@@ -2,4 +2,4 @@ part-2 - https://www.youtube.com/watch?v=l-_X7MMmBi0&t=10200s
 time : - completed
 
 part -3 https://www.youtube.com/watch?v=pfCX1vJAnnI&t=16818s
-7.42
+1.20.40 
